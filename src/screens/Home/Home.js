@@ -4,13 +4,12 @@ import {
   Text,
   View,
 } from 'react-native';
-import Router from './src/config/Router';
 
 const App = () => {
   return (
-    <>
-      <Router />
-    </>
+    <View>
+      <Text>Home</Text>
+    </View>
     );
 }
 
