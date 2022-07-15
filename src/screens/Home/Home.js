@@ -5,13 +5,19 @@ import {
   View,
 } from 'react-native';
 
-const App = () => {
-  return (
-    <View>
+import OIcon from 'react-native-vector-icons/Octicons';
+
+class App extends React.Component {
+  render() {
+    return (
+      <View>
       <Text>Home</Text>
-    </View>
+      <OIcon name="gear" size={45} color="#900" />
+      </View>
     );
+  }
 }
+
 
 const styles = {
   sectionContainer: {
