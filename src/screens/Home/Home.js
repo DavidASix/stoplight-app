@@ -39,6 +39,12 @@ class App extends React.Component {
           </View>
         </View>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <View style={styles.pole}>
+        <Image
+          style={{ width: '100%', height: '100%', position: 'absolute', opacity: 0.50 }}
+          source={require('../../assets/MetalTexture.jpg')}
+          resizeMode="cover" />
+        </View>
           <View style={styles.outline}>
             <View style={styles.lightBox}>
               <TouchableOpacity
@@ -48,8 +54,9 @@ class App extends React.Component {
                   r && [styles.lampOn, {  backgroundColor: '#fc4444', shadowColor: '#FF0000' }]
                 ]}>
                 <Image
-                  source='../../assets/glassTexture.jpg'
-                  style={{ position: 'absolute', width: '100%' }} />
+                  style={{ width: '100%', position: 'absolute', height: '100%', opacity: 0.4 }}
+                  source={require('../../assets/glassTexture.png')}
+                  resizeMode="cover" />
                 </TouchableOpacity>
             </View>
             <View style={[styles.lightBox, { width: `${(2/3)*(3/4)*100}%` }]}>
@@ -58,7 +65,12 @@ class App extends React.Component {
                 style={[
                   styles.lamp, { backgroundColor: 'hsl(60, 10%, 50%)' },
                   y && [styles.lampOn, {  backgroundColor: '#f9fc44', shadowColor: '#FFFF00' }]
-                ]} />
+                ]}>
+                  <Image
+                    style={{ width: '100%', position: 'absolute', height: '100%', opacity: 0.4 }}
+                    source={require('../../assets/glassTexture.png')}
+                    resizeMode="cover" />
+                  </TouchableOpacity>
             </View>
             <View style={[styles.lightBox, { width: `${(2/3)*(3/4)*100}%` }]}>
               <TouchableOpacity
@@ -66,7 +78,12 @@ class App extends React.Component {
                 style={[
                   styles.lamp, { backgroundColor: 'hsl(126, 10%, 50%)' },
                   g && [styles.lampOn, {  backgroundColor: '#44fc57', shadowColor: '#00FF00' }]
-                ]} />
+                ]}>
+                  <Image
+                    style={{ width: '100%', position: 'absolute', height: '100%', opacity: 0.4 }}
+                    source={require('../../assets/glassTexture.png')}
+                    resizeMode="cover" />
+                  </TouchableOpacity>
             </View>
           </View>
         </View>
@@ -80,7 +97,7 @@ class App extends React.Component {
 
 const styles = {
   pageContainer: {
-    backgroundColor: '#e9b20e',
+    backgroundColor: 'hsl(44, 88%, 55%)',
     flex: 1,
     width: '100%',
     justifyContent: 'flex-start',
@@ -140,6 +157,7 @@ const styles = {
     shadowOpacity: 0,
     shadowRadius: 0,
     elevation: 0,
+    overflow: 'hidden'
   },
   lampOn: {
   shadowColor: "#fff",
@@ -150,7 +168,18 @@ const styles = {
   shadowOpacity: 1,
   shadowRadius: 10,
   elevation: 20,
-  }
+},
+pole: {
+  position: 'absolute',
+  bottom: 0,
+  width: 45,
+  height: '50%',
+  backgroundColor: '#636363',
+  overflow: 'hidden',
+  borderLeftWidth: 1,
+  borderRightWidth: 1,
+  borderColor: '#fff'
+}
 };
 
 export default App;
