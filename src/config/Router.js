@@ -15,7 +15,11 @@ const Stack = createStackNavigator();
 const MainStack = () => {
   return (
     <Stack.Navigator
-      screenOptions={{ headerShown: false, gestureEnabled: false, ...TransitionPresets.ModalSlideFromBottomIOS  }}
+      screenOptions={{
+        headerShown: false,
+        gestureEnabled: true,
+        presentation: 'transparentModal',
+        ...TransitionPresets.ModalPresentationIOS  }}
       initialRouteName="home" >
       <Stack.Screen
         name="home"

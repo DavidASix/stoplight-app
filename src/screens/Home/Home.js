@@ -27,17 +27,18 @@ class App extends React.Component {
     let {r, y, g} = this.state;
     return (
       <View style={styles.pageContainer}>
+
         <View style={styles.headerContainer}>
           <View style={{ flex: 1 }} />
           <View style={{flex: 3, justifyContent: 'center', alignItems: 'center' }}>
             <Text style={styles.title}>
-              StopLight
             </Text>
           </View>
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'flex-end' }}>
-            <OIcon name="gear" size={35} color="#FFF" />
+            <OIcon name="gear" size={35} color="#FFF" onPress={() => this.props.navigation.navigate('settings')} />
           </View>
         </View>
+
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <View style={styles.pole}>
         <Image
@@ -107,7 +108,7 @@ const styles = {
     width: '90%',
     padding: 15,
     flexDirection: 'row',
-    borderBottomWidth: 1,
+    //borderBottomWidth: 1,
     borderColor: '#fff'
   },
   title: {
