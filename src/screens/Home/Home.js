@@ -35,6 +35,7 @@ class App extends React.Component {
           <View style={{ flex: 1 }} />
           <View style={{flex: 3, justifyContent: 'center', alignItems: 'center' }}>
             <Text style={styles.title}>
+              {false ? 'Connected' : 'Not Connected'}
             </Text>
           </View>
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'flex-end' }}>
@@ -115,7 +116,7 @@ const styles = {
     borderColor: '#fff'
   },
   title: {
-    fontSize: 28,
+    fontSize: 18,
     color: '#fff',
     textWrap: 'nowrap'
   },

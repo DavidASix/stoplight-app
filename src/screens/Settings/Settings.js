@@ -5,13 +5,15 @@ import {
   View,
   TouchableOpacity,
   Image,
-  Linking
+  Linking,
+  ImageBackground
 } from 'react-native';
 
 import OIcon from 'react-native-vector-icons/Octicons';
 import SSIcon from 'react-native-vector-icons/SimpleLineIcons';
 
 const Github = 'http://www.github.com/davidasix';
+const Instagram = 'http://www.instagram.com/dave6dev';
 const Website = 'http://www.dave6.com/'
 
 class Settings extends React.Component {
@@ -31,7 +33,8 @@ class Settings extends React.Component {
   render() {
     let {r, y, g} = this.state;
     return (
-      <View style={styles.pageContainer}>
+      <View
+        style={styles.pageContainer}>
 
         <View style={styles.headerContainer}>
           <View style={{ flex: 1 }} />
@@ -43,15 +46,18 @@ class Settings extends React.Component {
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'flex-end' }} />
         </View>
 
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <View style={{ flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center' }}>
+
         </View>
+        
         <View style={{ marginVertical: 5, justifyContent: 'center', alignItems: 'center' }}>
           <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 5 }}>
             <SSIcon name='social-github' size={30} color='#fff' style={{ marginHorizontal: 15 }} onPress={() => Linking.openURL(Github) }/>
             <SSIcon name='screen-desktop' size={30} color='#fff' style={{ marginHorizontal: 15 }} onPress={() => Linking.openURL(Website) }/>
+            <SSIcon name='social-instagram' size={30} color='#fff' style={{ marginHorizontal: 15 }} onPress={() => Linking.openURL(Instagram) }/>
           </View>
           <Text style={{ marginTop: 0, color: '#fff' }}>
-            Created by Dave6
+            Created by Dave6 for Dave6.
           </Text>
         </View>
 
@@ -64,7 +70,7 @@ class Settings extends React.Component {
 
 const styles = {
   pageContainer: {
-    backgroundColor: 'hsl(44, 88%, 75%)',
+    backgroundColor: 'hsl(44, 5%, 60%)',
     flex: 1,
     width: '90%',
     justifyContent: 'flex-start',
@@ -73,7 +79,8 @@ const styles = {
     borderWidth: 2,
     borderColor: '#fff',
     marginVertical: '10%',
-    borderRadius: 20
+    borderRadius: 20,
+    opacity: 0.9
   },
   headerContainer: {
     width: '90%',
