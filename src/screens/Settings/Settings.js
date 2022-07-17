@@ -4,10 +4,15 @@ import {
   Text,
   View,
   TouchableOpacity,
-  Image
+  Image,
+  Linking
 } from 'react-native';
 
 import OIcon from 'react-native-vector-icons/Octicons';
+import SSIcon from 'react-native-vector-icons/SimpleLineIcons';
+
+const Github = 'http://www.github.com/davidasix';
+const Website = 'http://www.dave6.com/'
 
 class Settings extends React.Component {
   constructor(props) {
@@ -39,7 +44,15 @@ class Settings extends React.Component {
         </View>
 
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-
+        </View>
+        <View style={{ marginVertical: 5, justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 5 }}>
+            <SSIcon name='social-github' size={30} color='#fff' style={{ marginHorizontal: 15 }} onPress={() => Linking.openURL(Github) }/>
+            <SSIcon name='screen-desktop' size={30} color='#fff' style={{ marginHorizontal: 15 }} onPress={() => Linking.openURL(Website) }/>
+          </View>
+          <Text style={{ marginTop: 0, color: '#fff' }}>
+            Created by Dave6
+          </Text>
         </View>
 
       </View>

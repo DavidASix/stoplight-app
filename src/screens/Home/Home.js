@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 
 import OIcon from 'react-native-vector-icons/Octicons';
+import SSIcon from 'react-native-vector-icons/SimpleLineIcons';
 
 class App extends React.Component {
   constructor(props) {
@@ -22,7 +23,9 @@ class App extends React.Component {
   changeLight(l) {
     this.setState({ [l]: !this.state[l] });
   }
-
+/**
+ * would be cool to see the stoplight have a little movement if you drag on the edge of it
+ ***/
   render() {
     let {r, y, g} = this.state;
     return (
@@ -35,7 +38,7 @@ class App extends React.Component {
             </Text>
           </View>
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'flex-end' }}>
-            <OIcon name="gear" size={35} color="#FFF" onPress={() => this.props.navigation.navigate('settings')} />
+            <SSIcon name="settings" size={35} color="#FFF" onPress={() => this.props.navigation.navigate('settings')} />
           </View>
         </View>
 
@@ -98,7 +101,7 @@ class App extends React.Component {
 
 const styles = {
   pageContainer: {
-    backgroundColor: 'hsl(44, 88%, 55%)',
+    backgroundColor: 'hsl(44, 88%, 75%)',//44, 88, 55
     flex: 1,
     width: '100%',
     justifyContent: 'flex-start',
