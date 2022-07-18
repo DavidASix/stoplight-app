@@ -8,6 +8,7 @@ import {
   Linking,
   ImageBackground
 } from 'react-native';
+import Lottie from 'lottie-react-native';
 
 import OIcon from 'react-native-vector-icons/Octicons';
 import SSIcon from 'react-native-vector-icons/SimpleLineIcons';
@@ -15,6 +16,26 @@ import SSIcon from 'react-native-vector-icons/SimpleLineIcons';
 const Github = 'http://www.github.com/davidasix';
 const Instagram = 'http://www.instagram.com/dave6dev';
 const Website = 'http://www.dave6.com/'
+
+const Row = ({ title, sub, lottie, onPress }) => (
+  <TouchableOpacity style={styles.row} onPress={() => onPress()}>
+    <View style={{ flex: 1, justifyContent: 'center' }}>
+      <Text style={styles.rowText}>
+        {title}
+      </Text>
+      <Text style={styles.rowSubText}>
+        {sub}
+      </Text>
+    </View>
+    <View style={styles.lottieContainer}>
+      <Lottie
+        style={{ width: '200%' }}
+        source={lottie}
+        autoPlay
+        loop />
+    </View>
+  </TouchableOpacity>
+);
 
 class Settings extends React.Component {
   constructor(props) {
@@ -46,10 +67,23 @@ class Settings extends React.Component {
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'flex-end' }} />
         </View>
 
-        <View style={{ flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center' }}>
+        <View style={{ flex: 1, width: '100%', justifyContent: 'flex-start', alignItems: 'center' }}>
+
+          <Row
+            title='Multi-Select Mode'
+            sub='Select lights additively, adding to the selection with each press. Press lights again to turn off.'
+            lottie={require('../../assets/lottie/checkX2.json')}
+            onPress={() => console.log('Pressed')} />
+          <Row
+            title='Single Select Mode'
+            sub='Selecting a light will turn it on and turn off all other lights. This is how a StopLight normally acts. '
+            lottie={require('../../assets/lottie/checkX2.json')}
+            onPress={() => console.log('Pressed')} />
+
+
 
         </View>
-        
+
         <View style={{ marginVertical: 5, justifyContent: 'center', alignItems: 'center' }}>
           <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 5 }}>
             <SSIcon name='social-github' size={30} color='#fff' style={{ marginHorizontal: 15 }} onPress={() => Linking.openURL(Github) }/>
@@ -94,71 +128,31 @@ const styles = {
     color: '#fff',
     textWrap: 'nowrap'
   },
-  outline: {
-    width: '70%',
-    aspectRatio: 0.5,
-    maxHeight: '90%',
-    justifyContent:'center',
-    alignItems: 'center',
-    marginVertical: 20,
-    backgroundColor: '#e9b20e',
-    borderRadius: 30,
-    borderWidth: 0.5,
-    borderColor: '#fff',
-    shadowColor: "#604806",
-    shadowOffset: {
-    	width: 0,
-    	height: 5,
-    },
-    shadowOpacity: 0.50,
-    shadowRadius: 6.27,
-    elevation: 10,
-    paddingHorizontal: 20,
-    paddingVertical: 10
+  row: {
+    width: '100%',
+    flexDirection: 'row',
+    minHeight: 50,
+    paddingHorizontal: 10,
+    marginVertical: 10,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
-  lightBox: {
-    width: `${(2/3)*100}%`,
+  rowText: {
+    color: '#fff',
+    fontSize: 20
+  },
+  rowSubText: {
+    color: '#fff',
+    marginHorizontal: 10,
+    fontSize: 12
+  },
+  lottieContainer: {
+    height: 50,
     aspectRatio: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#d9d9d9',
-    borderRadius: 5,
-    marginVertical: 3
-  },
-  lamp: {
-    width: '85%',
-    aspectRatio: 1,
-    borderRadius: 100,
-    borderWidth: 1,
-    backgroundColor: '#e9b20e',
-    borderColor: '#FFF',
-    shadowOpacity: 0,
-    shadowRadius: 0,
-    elevation: 0,
     overflow: 'hidden'
-  },
-  lampOn: {
-  shadowColor: "#fff",
-  shadowOffset: {
-    width: 0,
-    height: 5,
-  },
-  shadowOpacity: 1,
-  shadowRadius: 10,
-  elevation: 20,
-},
-pole: {
-  position: 'absolute',
-  bottom: 0,
-  width: 45,
-  height: '50%',
-  backgroundColor: '#636363',
-  overflow: 'hidden',
-  borderLeftWidth: 1,
-  borderRightWidth: 1,
-  borderColor: '#fff'
-}
+  }
 };
 
 export default Settings;
