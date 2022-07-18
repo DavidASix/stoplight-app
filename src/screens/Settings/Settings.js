@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   Image,
   Linking,
-  ImageBackground
+  Animated
 } from 'react-native';
 import Lottie from 'lottie-react-native';
 
@@ -17,42 +17,52 @@ const Github = 'http://www.github.com/davidasix';
 const Instagram = 'http://www.instagram.com/dave6dev';
 const Website = 'http://www.dave6.com/'
 
-const Row = ({ title, sub, lottie, onPress }) => (
-  <TouchableOpacity style={styles.row} onPress={() => onPress()}>
-    <View style={{ flex: 1, justifyContent: 'center' }}>
-      <Text style={styles.rowText}>
-        {title}
-      </Text>
-      <Text style={styles.rowSubText}>
-        {sub}
-      </Text>
-    </View>
-    <View style={styles.lottieContainer}>
-      <Lottie
-        style={{ width: '200%' }}
-        source={lottie}
-        autoPlay
-        loop />
-    </View>
-  </TouchableOpacity>
-);
+const Row = ({ title, sub, slug, lottie, progress, onPress }) => {
+  return (
+    <TouchableOpacity style={styles.row} onPress={() => onPress(slug)}>
+      <View style={{ flex: 1, justifyContent: 'center' }}>
+        <Text style={styles.rowText}>
+          {title}
+        </Text>
+        <Text style={styles.rowSubText}>
+          {sub}
+        </Text>
+      </View>
+      <View style={styles.lottieContainer}>
+        <Lottie
+          progress={progress}
+          style={{ width: '200%' }}
+          source={lottie} />
+      </View>
+    </TouchableOpacity>
+  ) };
 
 class Settings extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      r: false,
-      y: false,
-      g: false
+      msm: new Animated.Value(1),
+      ssm: new Animated.Value(0)
     }
   }
 
-  changeLight(l) {
-    this.setState({ [l]: !this.state[l] });
+  rowPressed(slug) {
+    let animconf = { duration: 1100, useNativeDriver: false }
+    console.log(`${slug} : ${!this.state[slug]._value}`);
+    switch (slug) {
+      case 'msm':
+        Animated.timing(this.state.msm, { ...animconf, toValue: 1 }).start();
+        Animated.timing(this.state.ssm, { ...animconf, toValue: 0 }).start();
+        break;
+      case 'ssm':
+        Animated.timing(this.state.msm, { ...animconf, toValue: 0 }).start();
+        Animated.timing(this.state.ssm, { ...animconf, toValue: 1 }).start();
+        break;
+      default:
+    }
   }
 
   render() {
-    let {r, y, g} = this.state;
     return (
       <View
         style={styles.pageContainer}>
@@ -70,17 +80,19 @@ class Settings extends React.Component {
         <View style={{ flex: 1, width: '100%', justifyContent: 'flex-start', alignItems: 'center' }}>
 
           <Row
+            slug='msm'
             title='Multi-Select Mode'
             sub='Select lights additively, adding to the selection with each press. Press lights again to turn off.'
             lottie={require('../../assets/lottie/checkX2.json')}
-            onPress={() => console.log('Pressed')} />
+            progress={this.state.msm}
+            onPress={(slug) => this.rowPressed(slug)} />
           <Row
+            slug='ssm'
             title='Single Select Mode'
             sub='Selecting a light will turn it on and turn off all other lights. This is how a StopLight normally acts. '
             lottie={require('../../assets/lottie/checkX2.json')}
-            onPress={() => console.log('Pressed')} />
-
-
+            progress={this.state.ssm}
+            onPress={(slug) => this.rowPressed(slug)} />
 
         </View>
 
