@@ -42,7 +42,9 @@ class Settings extends React.Component {
     super(props);
     this.state = {
       msm: new Animated.Value(1),
-      ssm: new Animated.Value(0)
+      ssm: new Animated.Value(0),
+      btc: new Animated.Value(0),
+      bluetooth: ''
     }
   }
 
@@ -90,6 +92,13 @@ class Settings extends React.Component {
             slug='ssm'
             title='Single Select Mode'
             sub='Selecting a light will turn it on and turn off all other lights. This is how a StopLight normally acts. '
+            lottie={require('../../assets/lottie/checkX2.json')}
+            progress={this.state.ssm}
+            onPress={(slug) => this.rowPressed(slug)} />
+          <Row
+            slug='btc'
+            title='Bluetooth Connected'
+            sub={this.state.bluetooth ? `Connected to ${'device'}` : 'Press to connect.'}
             lottie={require('../../assets/lottie/checkX2.json')}
             progress={this.state.ssm}
             onPress={(slug) => this.rowPressed(slug)} />
