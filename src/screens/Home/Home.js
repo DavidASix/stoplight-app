@@ -10,7 +10,7 @@ import {
 import OIcon from 'react-native-vector-icons/Octicons';
 import SSIcon from 'react-native-vector-icons/SimpleLineIcons';
 
-class App extends React.Component {
+class Home extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -187,4 +187,4 @@ pole: {
 }
 };
 
-export default App;
+export default Home;

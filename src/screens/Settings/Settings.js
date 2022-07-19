@@ -6,9 +6,18 @@ import {
   TouchableOpacity,
   Image,
   Linking,
-  Animated
+  Animated,
+  NativeModules,
+  NativeEventEmitter,
+  Platform,
+  PermissionsAndroid,
+  FlatList,
 } from 'react-native';
 import Lottie from 'lottie-react-native';
+
+//import BleManager from '../BleManager';
+//const BleManagerModule = NativeModules.BleManager;
+//const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
 
 import OIcon from 'react-native-vector-icons/Octicons';
 import SSIcon from 'react-native-vector-icons/SimpleLineIcons';
@@ -64,6 +73,20 @@ class Settings extends React.Component {
     }
   }
 
+  async bt() {
+    if (Platform.OS !== 'android' && Platform.Version < 23) console.log('Wrong Platform');
+    try {
+      let permission = await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION);
+      if (!permission) {
+        let askPermission = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION);
+        if (!askPermission) throw 'No Permission';
+      }
+      console.log('Permission Granted');
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
   render() {
     return (
       <View
@@ -101,7 +124,7 @@ class Settings extends React.Component {
             sub={this.state.bluetooth ? `Connected to ${'device'}` : 'Press to connect.'}
             lottie={require('../../assets/lottie/checkX2.json')}
             progress={this.state.ssm}
-            onPress={(slug) => this.rowPressed(slug)} />
+            onPress={(slug) => this.bt(slug)} />
 
         </View>
 
