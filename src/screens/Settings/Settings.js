@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {
   SafeAreaView,
   Text,
@@ -46,34 +46,29 @@ const Row = ({ title, sub, slug, lottie, progress, onPress }) => {
     </TouchableOpacity>
   ) };
 
-class Settings extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      msm: new Animated.Value(1),
-      ssm: new Animated.Value(0),
-      btc: new Animated.Value(0),
-      bluetooth: ''
-    }
-  }
+const Settings = () => {
+    const [msm, setMsm ] = useState(new Animated.Value(1));
+    const [ssm, setSsm ] = useState(new Animated.Value(0));
+    const [btc, setBtc ] = useState(new Animated.Value(0));
+    const [bluetooth, setBluetooth ] = useState('');
 
-  rowPressed(slug) {
+  const rowPressed = (slug) => {
     let animconf = { duration: 1100, useNativeDriver: false }
-    console.log(`${slug} : ${!this.state[slug]._value}`);
+    console.log(`${slug} : ${![slug]._value}`);
     switch (slug) {
       case 'msm':
-        Animated.timing(this.state.msm, { ...animconf, toValue: 1 }).start();
-        Animated.timing(this.state.ssm, { ...animconf, toValue: 0 }).start();
+        Animated.timing(msm, { ...animconf, toValue: 1 }).start();
+        Animated.timing(ssm, { ...animconf, toValue: 0 }).start();
         break;
       case 'ssm':
-        Animated.timing(this.state.msm, { ...animconf, toValue: 0 }).start();
-        Animated.timing(this.state.ssm, { ...animconf, toValue: 1 }).start();
+        Animated.timing(msm, { ...animconf, toValue: 0 }).start();
+        Animated.timing(ssm, { ...animconf, toValue: 1 }).start();
         break;
       default:
     }
   }
 
-  async bt() {
+  const bt = async () => {
     if (Platform.OS !== 'android' && Platform.Version < 23) console.log('Wrong Platform');
     try {
       let permission = await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION);
@@ -87,7 +82,6 @@ class Settings extends React.Component {
     }
   }
 
-  render() {
     return (
       <View
         style={styles.pageContainer}>
@@ -109,22 +103,22 @@ class Settings extends React.Component {
             title='Multi-Select Mode'
             sub='Select lights additively, adding to the selection with each press. Press lights again to turn off.'
             lottie={require('../../assets/lottie/checkX2.json')}
-            progress={this.state.msm}
-            onPress={(slug) => this.rowPressed(slug)} />
+            progress={msm}
+            onPress={(slug) => rowPressed(slug)} />
           <Row
             slug='ssm'
             title='Single Select Mode'
             sub='Selecting a light will turn it on and turn off all other lights. This is how a StopLight normally acts. '
             lottie={require('../../assets/lottie/checkX2.json')}
-            progress={this.state.ssm}
-            onPress={(slug) => this.rowPressed(slug)} />
+            progress={ssm}
+            onPress={(slug) => rowPressed(slug)} />
           <Row
             slug='btc'
             title='Bluetooth Connected'
-            sub={this.state.bluetooth ? `Connected to ${'device'}` : 'Press to connect.'}
+            sub={bluetooth ? `Connected to ${'device'}` : 'Press to connect.'}
             lottie={require('../../assets/lottie/checkX2.json')}
-            progress={this.state.ssm}
-            onPress={(slug) => this.bt(slug)} />
+            progress={ssm}
+            onPress={(slug) => bt(slug)} />
 
         </View>
 
@@ -141,7 +135,6 @@ class Settings extends React.Component {
 
       </View>
     );
-  }
 
 }
 
