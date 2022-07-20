@@ -1,11 +1,8 @@
 import React from 'react';
-import {
-  View,
-  BackHandler,
-} from 'react-native';
+import {View, BackHandler} from 'react-native';
 
-import { NavigationContainer, useRoute } from '@react-navigation/native';
-import { createStackNavigator, TransitionPresets  } from '@react-navigation/stack';
+import {NavigationContainer, useRoute} from '@react-navigation/native';
+import {createStackNavigator, TransitionPresets} from '@react-navigation/stack';
 
 import Home from '../screens/Home/';
 import Settings from '../screens/Settings/';
@@ -19,19 +16,22 @@ const MainStack = () => {
         headerShown: false,
         gestureEnabled: true,
         presentation: 'transparentModal',
-        ...TransitionPresets.ModalPresentationIOS  }}
-      initialRouteName="home" >
+        ...TransitionPresets.ModalPresentationIOS,
+      }}
+      initialRouteName="home">
       <Stack.Screen
         name="home"
         component={Home}
-        options={({ navigation, route }) => ({ title: 'home' })} />
+        options={({navigation, route}) => ({title: 'home'})}
+      />
       <Stack.Screen
         name="settings"
         component={Settings}
-        options={({ navigation, route }) => ({ title: 'settings' })} />
+        options={({navigation, route}) => ({title: 'settings'})}
+      />
     </Stack.Navigator>
   );
-}
+};
 
 const Router = () => {
   return (
@@ -39,6 +39,6 @@ const Router = () => {
       <MainStack />
     </NavigationContainer>
   );
-}
+};
 
 export default Router;
