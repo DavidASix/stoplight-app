@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState, useEffect} from 'react';
 import {
   SafeAreaView,
   Text,
@@ -7,17 +7,14 @@ import {
   Image,
   Linking,
   Animated,
-  NativeModules,
-  NativeEventEmitter,
   Platform,
   PermissionsAndroid,
   FlatList,
+  ActivityIndicator
 } from 'react-native';
 import Lottie from 'lottie-react-native';
 
-//import BleManager from '../BleManager';
-//const BleManagerModule = NativeModules.BleManager;
-//const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
+import RNBluetoothClassic from 'react-native-bluetooth-classic';
 
 import OIcon from 'react-native-vector-icons/Octicons';
 import SSIcon from 'react-native-vector-icons/SimpleLineIcons';
@@ -26,33 +23,36 @@ const Github = 'http://www.github.com/davidasix';
 const Instagram = 'http://www.instagram.com/dave6dev';
 const Website = 'http://www.dave6.com/'
 
-const Row = ({ title, sub, slug, lottie, progress, onPress }) => {
+const Row = (props) => {
   return (
-    <TouchableOpacity style={styles.row} onPress={() => onPress(slug)}>
+    <TouchableOpacity style={styles.row} onPress={() => props.onPress()}>
       <View style={{ flex: 1, justifyContent: 'center' }}>
         <Text style={styles.rowText}>
-          {title}
+          {props.title}
         </Text>
         <Text style={styles.rowSubText}>
-          {sub}
+          {props.sub}
         </Text>
       </View>
       <View style={styles.lottieContainer}>
-        <Lottie
-          progress={progress}
-          style={{ width: '200%' }}
-          source={lottie} />
+        {props.children}
       </View>
     </TouchableOpacity>
   ) };
 
 const Settings = () => {
-    const [msm, setMsm ] = useState(new Animated.Value(1));
-    const [ssm, setSsm ] = useState(new Animated.Value(0));
-    const [btc, setBtc ] = useState(new Animated.Value(0));
-    const [bluetooth, setBluetooth ] = useState('');
+  const [msm, setMsm ] = useState(new Animated.Value(1));
+  const [ssm, setSsm ] = useState(new Animated.Value(0));
+  const [btc, setBtc ] = useState(new Animated.Value(0));
+  const [scanning, setScanning ] = useState(false);
 
-  const rowPressed = (slug) => {
+  useEffect(() => {
+    RNBluetoothClassic.onDeviceDiscovered((device) => {
+      console.log(device);
+    });
+  }, []);
+
+  const lightMode = (slug) => {
     let animconf = { duration: 1100, useNativeDriver: false }
     console.log(`${slug} : ${![slug]._value}`);
     switch (slug) {
@@ -77,6 +77,11 @@ const Settings = () => {
         if (!askPermission) throw 'No Permission';
       }
       console.log('Permission Granted');
+      setScanning(true);
+      let devices = await RNBluetoothClassic.startDiscovery();
+      devices = devices.map((d) => d.name);
+      console.log({ devices });
+      setScanning(false);
     } catch (e) {
       console.log(e);
     }
@@ -99,26 +104,30 @@ const Settings = () => {
         <View style={{ flex: 1, width: '100%', justifyContent: 'flex-start', alignItems: 'center' }}>
 
           <Row
-            slug='msm'
             title='Multi-Select Mode'
             sub='Select lights additively, adding to the selection with each press. Press lights again to turn off.'
-            lottie={require('../../assets/lottie/checkX2.json')}
-            progress={msm}
-            onPress={(slug) => rowPressed(slug)} />
+            onPress={() => lightMode('msm')}>
+            <Lottie
+              progress={msm}
+              style={{ width: '200%' }}
+              source={require('../../assets/lottie/checkX2.json')} />
+          </Row>
           <Row
-            slug='ssm'
             title='Single Select Mode'
-            sub='Selecting a light will turn it on and turn off all other lights. This is how a StopLight normally acts. '
-            lottie={require('../../assets/lottie/checkX2.json')}
-            progress={ssm}
-            onPress={(slug) => rowPressed(slug)} />
+            sub='Selecting a light will turn it on and turn off all other lights. This is how a StopLight normally acts.'
+            onPress={() => lightMode('ssm')}>
+            <Lottie
+              progress={ssm}
+              style={{ width: '200%' }}
+              source={require('../../assets/lottie/checkX2.json')} />
+          </Row>
           <Row
             slug='btc'
-            title='Bluetooth Connected'
-            sub={bluetooth ? `Connected to ${'device'}` : 'Press to connect.'}
-            lottie={require('../../assets/lottie/checkX2.json')}
-            progress={ssm}
-            onPress={(slug) => bt(slug)} />
+            title={scanning ? `Searching for devices` : 'Not Searching'}
+            sub={scanning ? `Connected to ${'device'}` : 'Press to connect.'}
+            onPress={() => bt()}>
+            {scanning && <ActivityIndicator size='large' color='#FF5522' />}
+          </Row>
 
         </View>
 
