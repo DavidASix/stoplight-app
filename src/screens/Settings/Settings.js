@@ -10,13 +10,15 @@ import {
   Platform,
   PermissionsAndroid,
   FlatList,
-  ActivityIndicator
+  ActivityIndicator,
+  LogBox
 } from 'react-native';
 import Lottie from 'lottie-react-native';
-
+LogBox.ignoreLogs(['Warning: ...']); // Ignore log notification by message
+LogBox.ignoreAllLogs();//Ignore all log notifications
 import RNBluetoothClassic from 'react-native-bluetooth-classic';
 
-import OIcon from 'react-native-vector-icons/Octicons';
+import MIcon from 'react-native-vector-icons/MaterialCommunityIcons';
 import SSIcon from 'react-native-vector-icons/SimpleLineIcons';
 
 const Github = 'http://www.github.com/davidasix';
@@ -45,10 +47,15 @@ const Settings = () => {
   const [ssm, setSsm ] = useState(new Animated.Value(0));
   const [btc, setBtc ] = useState(new Animated.Value(0));
   const [scanning, setScanning ] = useState(false);
+  const [devices, setDevice] = useState([]);
 
   useEffect(() => {
     RNBluetoothClassic.onDeviceDiscovered((device) => {
-      console.log(device);
+      setDevice((prevDevices) => {
+        let storedIDs = prevDevices.map(d => d.address)
+        //console.log(storedIDs, storedIDs.includes(device.address), device.address);
+        return storedIDs.includes(device.address) ? prevDevices : [...prevDevices, device];
+      });
     });
   }, []);
 
@@ -78,15 +85,33 @@ const Settings = () => {
       }
       console.log('Permission Granted');
       setScanning(true);
-      let devices = await RNBluetoothClassic.startDiscovery();
-      devices = devices.map((d) => d.name);
-      console.log({ devices });
+      setDevice([])
+      await RNBluetoothClassic.startDiscovery();
       setScanning(false);
     } catch (e) {
       console.log(e);
     }
   }
 
+  const renderDevice = (props) => {
+    let item = props.item;
+    let icon = '';
+    console.log(item.extra.rssi > -70);
+    if (item.extra.rssi > -70) { icon = 'signal-cellular-3'; }
+    else if (item.extra.rssi > -85) { icon = 'signal-cellular-2'; }
+    else if (item.extra.rssi > -95) { icon = 'signal-cellular-1'; }
+    else { icon = 'signal-cellular-outline'; }
+
+    return (
+      <Row
+        key={Math.random() *1000}
+        title={item.name}
+        sub={`${item.address}, rssi: ${item.extra.rssi}`}
+        onPress={() => lightMode('ssm')}>
+        <MIcon name={icon} size={25} color='#FFF' />
+      </Row>
+    )
+  }
     return (
       <View
         style={styles.pageContainer}>
@@ -128,7 +153,11 @@ const Settings = () => {
             onPress={() => bt()}>
             {scanning && <ActivityIndicator size='large' color='#FF5522' />}
           </Row>
-
+          <FlatList
+            style={styles.list}
+            data={devices}
+            renderItem={renderDevice}
+            keyExtractor={() => Math.random() *1000} />
         </View>
 
         <View style={{ marginVertical: 5, justifyContent: 'center', alignItems: 'center' }}>
@@ -173,6 +202,13 @@ const styles = {
     fontSize: 28,
     color: '#fff',
     textWrap: 'nowrap'
+  },
+  list: {
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#fff',
+    flex: 1,
+    width: '90%'
   },
   row: {
     width: '100%',
