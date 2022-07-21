@@ -1,10 +1,8 @@
 import React, {useState, useEffect} from 'react';
 import {
-  SafeAreaView,
   Text,
   View,
   TouchableOpacity,
-  Image,
   Linking,
   Animated,
   Platform,

@@ -1,7 +1,6 @@
 import React from 'react';
-import {SafeAreaView, Text, View, TouchableOpacity, Image} from 'react-native';
+import {Text, View, TouchableOpacity, Image} from 'react-native';
 
-import OIcon from 'react-native-vector-icons/Octicons';
 import SSIcon from 'react-native-vector-icons/SimpleLineIcons';
 
 class Home extends React.Component {
