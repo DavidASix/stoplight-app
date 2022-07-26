@@ -7,14 +7,16 @@ import {
   Animated,
   Platform,
   PermissionsAndroid,
-  FlatList,
+  SectionList,
   ActivityIndicator,
   LogBox,
 } from 'react-native';
 import Lottie from 'lottie-react-native';
 LogBox.ignoreLogs(['Warning: ...']); // Ignore log notification by message
 LogBox.ignoreAllLogs(); //Ignore all log notifications
-import RNBluetoothClassic from 'react-native-bluetooth-classic';
+import RNBluetoothClassic, {
+  BluetoothDevice,
+} from 'react-native-bluetooth-classic';
 
 import MIcon from 'react-native-vector-icons/MaterialCommunityIcons';
 import SSIcon from 'react-native-vector-icons/SimpleLineIcons';
@@ -40,11 +42,12 @@ const Settings = () => {
   const [ssm, setSsm] = useState(new Animated.Value(0));
   const [btc, setBtc] = useState(new Animated.Value(0));
   const [scanning, setScanning] = useState(false);
-  const [devices, setDevice] = useState([]);
+  const [scannedDevices, setScannedDevice] = useState([]);
+  const [pairedDevices, setPairedDevice] = useState([]);
 
   useEffect(() => {
     RNBluetoothClassic.onDeviceDiscovered(device => {
-      setDevice(prevDevices => {
+      setScannedDevice(prevDevices => {
         let storedIDs = prevDevices.map(d => d.address);
         //console.log(storedIDs, storedIDs.includes(device.address), device.address);
         return storedIDs.includes(device.address)
@@ -54,7 +57,7 @@ const Settings = () => {
     });
   }, []);
 
-  const lightMode = slug => {
+  const lampMode = slug => {
     let animconf = {duration: 1100, useNativeDriver: false};
     console.log(`${slug} : ${![slug]._value}`);
     switch (slug) {
@@ -70,7 +73,7 @@ const Settings = () => {
     }
   };
 
-  const bt = async () => {
+  const startScan = async () => {
     if (Platform.OS !== 'android' && Platform.Version < 23) {
       return console.log('Wrong Platform');
     }
@@ -88,7 +91,10 @@ const Settings = () => {
       }
       console.log('Permission Granted');
       setScanning(true);
-      setDevice([]);
+      setScannedDevice([]);
+      setPairedDevice([]);
+      let paired = await RNBluetoothClassic.getBondedDevices();
+      setPairedDevice(paired);
       await RNBluetoothClassic.startDiscovery();
       setScanning(false);
     } catch (e) {
@@ -96,10 +102,39 @@ const Settings = () => {
     }
   };
 
+  const onPressDevice = async device => {
+    console.log('----- Attempting to connect to: ', device.name);
+    try {
+      let pairedDevice;
+      if (!device.bonded) {
+        // Pair to device
+        console.log('Device not paired');
+        pairedDevice = await RNBluetoothClassic.pairDevice(device.address);
+      } else {
+        // Get device object of previously paired device
+        console.log('Device previously paired');
+        pairedDevice = pairedDevices.filter(
+          d => d.address === device.address,
+        )[0];
+      }
+      // Connect to paired device
+      console.log(pairedDevice);
+      console.log('Paired Device:');
+      let connect = await pairedDevice.connect();
+      console.table({connect});
+    } catch (e) {
+      console.log('error');
+      console.log({e});
+    }
+  };
+
+  const renderHeader = props => <Text>{props.section.title}</Text>;
+
   const renderDevice = props => {
     let item = props.item;
     let icon = '';
-    console.log(item.extra.rssi > -70);
+    let rssi = item.extra.rssi || item.rssi;
+    rssi = rssi || 'Get Closer';
     if (item.extra.rssi > -70) {
       icon = 'signal-cellular-3';
     } else if (item.extra.rssi > -85) {
@@ -109,17 +144,17 @@ const Settings = () => {
     } else {
       icon = 'signal-cellular-outline';
     }
-
     return (
       <Row
         key={Math.random() * 1000}
         title={item.name}
-        sub={`${item.address}, rssi: ${item.extra.rssi}`}
-        onPress={() => lightMode('ssm')}>
+        sub={`${item.address}, rssi: ${rssi}`}
+        onPress={() => onPressDevice(item)}>
         <MIcon name={icon} size={25} color="#FFF" />
       </Row>
     );
   };
+
   return (
     <View style={styles.pageContainer}>
       <View style={styles.headerContainer}>
@@ -142,7 +177,7 @@ const Settings = () => {
         <Row
           title="Multi-Select Mode"
           sub="Select lights additively, adding to the selection with each press. Press lights again to turn off."
-          onPress={() => lightMode('msm')}>
+          onPress={() => lampMode('msm')}>
           <Lottie
             progress={msm}
             style={{width: '200%'}}
@@ -152,7 +187,7 @@ const Settings = () => {
         <Row
           title="Single Select Mode"
           sub="Selecting a light will turn it on and turn off all other lights. This is how a StopLight normally acts."
-          onPress={() => lightMode('ssm')}>
+          onPress={() => lampMode('ssm')}>
           <Lottie
             progress={ssm}
             style={{width: '200%'}}
@@ -163,15 +198,21 @@ const Settings = () => {
           slug="btc"
           title={scanning ? 'Searching for devices' : 'Not Searching'}
           sub={scanning ? `Connected to ${'device'}` : 'Press to connect.'}
-          onPress={() => bt()}>
+          onPress={() => startScan()}>
           {scanning && <ActivityIndicator size="large" color="#FF5522" />}
         </Row>
-        <FlatList
-          style={styles.list}
-          data={devices}
-          renderItem={renderDevice}
-          keyExtractor={() => Math.random() * 1000}
-        />
+        {[...scannedDevices, ...pairedDevices].length > 0 && (
+          <SectionList
+            style={styles.list}
+            sections={[
+              {title: 'Paired Devices', data: pairedDevices},
+              {title: 'Scanned Devices', data: scannedDevices},
+            ]}
+            renderItem={renderDevice}
+            renderSectionHeader={renderHeader}
+            keyExtractor={() => Math.random() * 1000}
+          />
+        )}
       </View>
 
       <View
