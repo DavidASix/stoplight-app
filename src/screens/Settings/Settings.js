@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   NativeEventEmitter,
   NativeModules,
+  ToastAndroid,
 } from 'react-native';
 import Lottie from 'lottie-react-native';
 import BleManager from 'react-native-ble-manager';
@@ -45,9 +46,12 @@ const Settings = () => {
   const [connectedDevices, setConnectedDevices] = useState([]);
 
   useEffect(() => {
-    BleManager.start({showAlert: true}).then(() => {
-      console.log('Module initialized');
-    });
+    const bleSetup = async () => {
+      await BleManager.start({showAlert: true});
+      let connected = await BleManager.getConnectedPeripherals([]);
+      setConnectedDevices(connected);
+    };
+    bleSetup();
     const discoveryHandler = bleManagerEmitter.addListener(
       'BleManagerDiscoverPeripheral',
       handleDiscovery,
@@ -58,16 +62,20 @@ const Settings = () => {
     );
     const connectHandler = bleManagerEmitter.addListener(
       'BleManagerConnectPeripheral',
-      handlePeripheralConnect,
+      handleConnect,
+    );
+    const disconnectHandler = bleManagerEmitter.addListener(
+      'BleManagerDisconnectPeripheral',
+      handleDisconnect,
     );
 
     return () => {
       discoveryHandler.remove();
       scanStopHandler.remove();
       connectHandler.remove();
+      disconnectHandler.remove();
     };
     /*
-      this.handlerDisconnect = this.bleManagerEmitter.addListener('BleManagerDisconnectPeripheral', this.handleDisconnectedPeripheral );
       this.handlerUpdate = this.bleManagerEmitter.addListener('BleManagerDidUpdateValueForCharacteristic', this.handleUpdateValueForCharacteristic );
       this.bleUpdateState = this.bleManagerEmitter.addListener('BleManagerDidUpdateState', this.bleUpdateStateBt );*/
   }, []);
@@ -86,9 +94,20 @@ const Settings = () => {
     setScanning(false);
   };
 
-  const handlePeripheralConnect = device => {
-    console.log('Handle Device Connnect: ');
-    console.log(device);
+  const handleConnect = async device => {
+    ToastAndroid.show('Connection Successful', ToastAndroid.SHORT);
+    await BleManager.stopScan();
+    let connected = await BleManager.getConnectedPeripherals([]);
+    setConnectedDevices(connected);
+    setScannedDevice(prevDevices =>
+      prevDevices.filter(d => d.id !== device.peripheral),
+    );
+  };
+
+  const handleDisconnect = async device => {
+    console.log('Handle Disconnect for: ', device);
+    let connected = await BleManager.getConnectedPeripherals([]);
+    setConnectedDevices(connected);
   };
 
   const lampMode = slug => {
@@ -124,9 +143,10 @@ const Settings = () => {
         }
       }
       setScanning(true);
-      await BleManager.scan([], 5, true);
       let connected = await BleManager.getConnectedPeripherals([]);
       setConnectedDevices(connected);
+      setScannedDevice([]);
+      await BleManager.scan([], 5, true);
       console.log('Scanning Started');
       // Start Discovery
     } catch (e) {
@@ -140,6 +160,7 @@ const Settings = () => {
       await BleManager.connect(device.id);
       console.log('Device Connected');
     } catch (e) {
+      ToastAndroid.show('Error connecting to device.', ToastAndroid.SHORT);
       console.log('error');
       console.log({e});
     }
