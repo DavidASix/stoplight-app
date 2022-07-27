@@ -9,10 +9,14 @@ import {
   PermissionsAndroid,
   SectionList,
   ActivityIndicator,
-  LogBox,
+  NativeEventEmitter,
+  NativeModules,
 } from 'react-native';
 import Lottie from 'lottie-react-native';
 import BleManager from 'react-native-ble-manager';
+const BleManagerModule = NativeModules.BleManager;
+const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
+import { stringToBytes } from "convert-string";
 
 import MIcon from 'react-native-vector-icons/MaterialCommunityIcons';
 import SSIcon from 'react-native-vector-icons/SimpleLineIcons';
@@ -42,8 +46,34 @@ const Settings = () => {
   const [pairedDevices, setPairedDevice] = useState([]);
 
   useEffect(() => {
-
+    BleManager.start({showAlert: true}).then(() => {
+      // Success code
+      console.log('Module initialized');
+    });
+    const discoveryHandler = bleManagerEmitter.addListener(
+      'BleManagerDiscoverPeripheral',
+      handleDiscovery,
+    );
+    /*
+      this.handlerStop = this.bleManagerEmitter.addListener('BleManagerStopScan', this.handleStopScan );
+      this.handlerDisconnect = this.bleManagerEmitter.addListener('BleManagerDisconnectPeripheral', this.handleDisconnectedPeripheral );
+      this.handlerConnect = this.bleManagerEmitter.addListener('BleManagerConnectPeripheral', this.handlerConnectPeripheral );
+      this.handlerUpdate = this.bleManagerEmitter.addListener('BleManagerDidUpdateValueForCharacteristic', this.handleUpdateValueForCharacteristic );
+      this.bleUpdateState = this.bleManagerEmitter.addListener('BleManagerDidUpdateState', this.bleUpdateStateBt );*/
   }, []);
+
+  const handleDiscovery = device => {
+    console.log('Device Discovered: ', device.name);
+    //console.log(device);
+    setScannedDevice(prevDevices => {
+      let storedIDs = prevDevices.map(d => d.id);
+      console.log(storedIDs, storedIDs.includes(device.id), device.id);
+
+      return storedIDs.includes(device.id)
+        ? prevDevices
+        : [...prevDevices, device];
+    });
+  };
 
   const lampMode = slug => {
     let animconf = {duration: 1100, useNativeDriver: false};
@@ -79,6 +109,8 @@ const Settings = () => {
       }
       console.log('Permission Granted');
       setScanning(true);
+      let scan = await BleManager.scan([], 5, true);
+      console.log('scan: ', {scan});
       setScannedDevice([]);
       setPairedDevice([]);
       let paired = [];
@@ -93,7 +125,9 @@ const Settings = () => {
   const onPressDevice = async device => {
     console.log('----- Attempting to connect to: ', device.name);
     try {
-      let pairedDevice;
+      console.log(device.advertising);
+      let pairedDevice = await BleManager.connect(device.id);
+      /*
       if (!device.bonded) {
         // Pair to device
         console.log('Device not paired');
@@ -102,19 +136,22 @@ const Settings = () => {
       } else {
         // Get device object of previously paired device
         console.log('Device previously paired');
-        pairedDevice = pairedDevices.filter(
-          d => d.address === device.address,
-        )[0];
-      }
+        pairedDevice = pairedDevices.filter(d => d.id === device.id)[0];
+      }*/
       //console.log('available? ');
       //let avail = await pairedDevice.available();
       //console.log('available: ', {avail});
       // Connect to paired device
-      console.log(pairedDevice);
       console.log('Paired Device:');
-      let connect = await pairedDevice.connect();
-      console.table({connect});
-      connect.write('r');
+      console.log(pairedDevice);
+      let text = stringToBytes('r');
+      let w = await BleManager.write(
+        device.id,// Need to figure out how to get the below ID's from a device.
+        '0000ffe0-0000-1000-8000-00805f9b34fb',
+        '0000ffe1-0000-1000-8000-00805f9b34fb',
+        text,
+      );
+      console.log({w});
     } catch (e) {
       console.log('error');
       console.log({e});
@@ -126,13 +163,13 @@ const Settings = () => {
   const renderDevice = props => {
     let item = props.item;
     let icon = '';
-    let rssi = item.extra.rssi || item.rssi;
+    let rssi = item.extra?.rssi || item.rssi;
     rssi = rssi || 'Get Closer';
-    if (item.extra.rssi > -70) {
+    if (rssi > -70) {
       icon = 'signal-cellular-3';
-    } else if (item.extra.rssi > -85) {
+    } else if (rssi > -85) {
       icon = 'signal-cellular-2';
-    } else if (item.extra.rssi > -95) {
+    } else if (rssi > -95) {
       icon = 'signal-cellular-1';
     } else {
       icon = 'signal-cellular-outline';
@@ -141,7 +178,7 @@ const Settings = () => {
       <Row
         key={Math.random() * 1000}
         title={item.name}
-        sub={`${item.address}, rssi: ${rssi}`}
+        sub={`${item.id}, rssi: ${rssi}`}
         onPress={() => onPressDevice(item)}>
         <MIcon name={icon} size={25} color="#FFF" />
       </Row>
