@@ -16,7 +16,6 @@ import Lottie from 'lottie-react-native';
 import BleManager from 'react-native-ble-manager';
 const BleManagerModule = NativeModules.BleManager;
 const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
-import {stringToBytes} from 'convert-string';
 
 import MIcon from 'react-native-vector-icons/MaterialCommunityIcons';
 import SSIcon from 'react-native-vector-icons/SimpleLineIcons';
@@ -43,10 +42,10 @@ const Settings = () => {
   const [btc, setBtc] = useState(new Animated.Value(0));
   const [scanning, setScanning] = useState(false);
   const [scannedDevices, setScannedDevice] = useState([]);
+  const [connectedDevices, setConnectedDevices] = useState([]);
 
   useEffect(() => {
     BleManager.start({showAlert: true}).then(() => {
-      // Success code
       console.log('Module initialized');
     });
     const discoveryHandler = bleManagerEmitter.addListener(
@@ -74,11 +73,8 @@ const Settings = () => {
   }, []);
 
   const handleDiscovery = device => {
-    //console.log('Device Discovered: ', device.name);
-    //console.log(device);
     setScannedDevice(prevDevices => {
       let storedIDs = prevDevices.map(d => d.id);
-
       return !storedIDs.includes(device.id) && !!device.name
         ? [...prevDevices, device]
         : prevDevices;
@@ -127,12 +123,11 @@ const Settings = () => {
           throw 'No Permission';
         }
       }
-      console.log('Permission Granted');
       setScanning(true);
       await BleManager.scan([], 5, true);
-      let connectedDevices = await BleManager.getConnectedPeripherals([]);
-      console.log({connectedDevices});
-      setScannedDevice(connectedDevices);
+      let connected = await BleManager.getConnectedPeripherals([]);
+      setConnectedDevices(connected);
+      console.log('Scanning Started');
       // Start Discovery
     } catch (e) {
       console.log(e);
@@ -142,25 +137,13 @@ const Settings = () => {
   const onPressDevice = async device => {
     console.log('----- Attempting to connect to: ', device.name);
     try {
-      console.log(device.advertising);
       await BleManager.connect(device.id);
       console.log('Device Connected');
-      /*
-      let text = stringToBytes('r');
-      let w = await BleManager.write(
-        device.id,
-        '0000ffe0-0000-1000-8000-00805f9b34fb',
-        '0000ffe1-0000-1000-8000-00805f9b34fb',
-        text,
-      );
-      console.log({w});*/
     } catch (e) {
       console.log('error');
       console.log({e});
     }
   };
-
-  const renderHeader = props => <Text>{props.section.title}</Text>;
 
   const renderDevice = props => {
     let item = props.item;
@@ -236,9 +219,12 @@ const Settings = () => {
 
         <SectionList
           style={styles.list}
-          sections={[{title: 'Scanned Devices', data: scannedDevices}]}
+          sections={[
+            {title: 'Connected Devices', data: connectedDevices},
+            {title: 'Scanned Devices', data: scannedDevices},
+          ]}
           renderItem={renderDevice}
-          renderSectionHeader={renderHeader}
+          renderSectionHeader={props => <Text>{props.section.title}</Text>}
           keyExtractor={() => Math.random() * 1000}
         />
       </View>
