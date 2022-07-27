@@ -12,11 +12,7 @@ import {
   LogBox,
 } from 'react-native';
 import Lottie from 'lottie-react-native';
-LogBox.ignoreLogs(['Warning: ...']); // Ignore log notification by message
-LogBox.ignoreAllLogs(); //Ignore all log notifications
-import RNBluetoothClassic, {
-  BluetoothDevice,
-} from 'react-native-bluetooth-classic';
+import BleManager from 'react-native-ble-manager';
 
 import MIcon from 'react-native-vector-icons/MaterialCommunityIcons';
 import SSIcon from 'react-native-vector-icons/SimpleLineIcons';
@@ -46,15 +42,7 @@ const Settings = () => {
   const [pairedDevices, setPairedDevice] = useState([]);
 
   useEffect(() => {
-    RNBluetoothClassic.onDeviceDiscovered(device => {
-      setScannedDevice(prevDevices => {
-        let storedIDs = prevDevices.map(d => d.address);
-        //console.log(storedIDs, storedIDs.includes(device.address), device.address);
-        return storedIDs.includes(device.address)
-          ? prevDevices
-          : [...prevDevices, device];
-      });
-    });
+
   }, []);
 
   const lampMode = slug => {
@@ -93,9 +81,9 @@ const Settings = () => {
       setScanning(true);
       setScannedDevice([]);
       setPairedDevice([]);
-      let paired = await RNBluetoothClassic.getBondedDevices();
+      let paired = [];
       setPairedDevice(paired);
-      await RNBluetoothClassic.startDiscovery();
+      // Start Discovery
       setScanning(false);
     } catch (e) {
       console.log(e);
@@ -109,7 +97,8 @@ const Settings = () => {
       if (!device.bonded) {
         // Pair to device
         console.log('Device not paired');
-        pairedDevice = await RNBluetoothClassic.pairDevice(device.address);
+        // Get paired Device Object
+        //console.log({ pairedDevice });
       } else {
         // Get device object of previously paired device
         console.log('Device previously paired');
@@ -117,11 +106,15 @@ const Settings = () => {
           d => d.address === device.address,
         )[0];
       }
+      //console.log('available? ');
+      //let avail = await pairedDevice.available();
+      //console.log('available: ', {avail});
       // Connect to paired device
       console.log(pairedDevice);
       console.log('Paired Device:');
       let connect = await pairedDevice.connect();
       console.table({connect});
+      connect.write('r');
     } catch (e) {
       console.log('error');
       console.log({e});
