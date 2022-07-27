@@ -16,7 +16,7 @@ import Lottie from 'lottie-react-native';
 import BleManager from 'react-native-ble-manager';
 const BleManagerModule = NativeModules.BleManager;
 const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
-import { stringToBytes } from "convert-string";
+import {stringToBytes} from 'convert-string';
 
 import MIcon from 'react-native-vector-icons/MaterialCommunityIcons';
 import SSIcon from 'react-native-vector-icons/SimpleLineIcons';
@@ -43,7 +43,6 @@ const Settings = () => {
   const [btc, setBtc] = useState(new Animated.Value(0));
   const [scanning, setScanning] = useState(false);
   const [scannedDevices, setScannedDevice] = useState([]);
-  const [pairedDevices, setPairedDevice] = useState([]);
 
   useEffect(() => {
     BleManager.start({showAlert: true}).then(() => {
@@ -54,25 +53,46 @@ const Settings = () => {
       'BleManagerDiscoverPeripheral',
       handleDiscovery,
     );
+    const scanStopHandler = bleManagerEmitter.addListener(
+      'BleManagerStopScan',
+      handleStopScan,
+    );
+    const connectHandler = bleManagerEmitter.addListener(
+      'BleManagerConnectPeripheral',
+      handlePeripheralConnect,
+    );
+
+    return () => {
+      discoveryHandler.remove();
+      scanStopHandler.remove();
+      connectHandler.remove();
+    };
     /*
-      this.handlerStop = this.bleManagerEmitter.addListener('BleManagerStopScan', this.handleStopScan );
       this.handlerDisconnect = this.bleManagerEmitter.addListener('BleManagerDisconnectPeripheral', this.handleDisconnectedPeripheral );
-      this.handlerConnect = this.bleManagerEmitter.addListener('BleManagerConnectPeripheral', this.handlerConnectPeripheral );
       this.handlerUpdate = this.bleManagerEmitter.addListener('BleManagerDidUpdateValueForCharacteristic', this.handleUpdateValueForCharacteristic );
       this.bleUpdateState = this.bleManagerEmitter.addListener('BleManagerDidUpdateState', this.bleUpdateStateBt );*/
   }, []);
 
   const handleDiscovery = device => {
-    console.log('Device Discovered: ', device.name);
+    //console.log('Device Discovered: ', device.name);
     //console.log(device);
     setScannedDevice(prevDevices => {
       let storedIDs = prevDevices.map(d => d.id);
-      console.log(storedIDs, storedIDs.includes(device.id), device.id);
 
-      return storedIDs.includes(device.id)
-        ? prevDevices
-        : [...prevDevices, device];
+      return !storedIDs.includes(device.id) && !!device.name
+        ? [...prevDevices, device]
+        : prevDevices;
     });
+  };
+
+  const handleStopScan = () => {
+    console.log('Stopped Scanning');
+    setScanning(false);
+  };
+
+  const handlePeripheralConnect = device => {
+    console.log('Handle Device Connnect: ');
+    console.log(device);
   };
 
   const lampMode = slug => {
@@ -109,14 +129,11 @@ const Settings = () => {
       }
       console.log('Permission Granted');
       setScanning(true);
-      let scan = await BleManager.scan([], 5, true);
-      console.log('scan: ', {scan});
-      setScannedDevice([]);
-      setPairedDevice([]);
-      let paired = [];
-      setPairedDevice(paired);
+      await BleManager.scan([], 5, true);
+      let connectedDevices = await BleManager.getConnectedPeripherals([]);
+      console.log({connectedDevices});
+      setScannedDevice(connectedDevices);
       // Start Discovery
-      setScanning(false);
     } catch (e) {
       console.log(e);
     }
@@ -126,32 +143,17 @@ const Settings = () => {
     console.log('----- Attempting to connect to: ', device.name);
     try {
       console.log(device.advertising);
-      let pairedDevice = await BleManager.connect(device.id);
+      await BleManager.connect(device.id);
+      console.log('Device Connected');
       /*
-      if (!device.bonded) {
-        // Pair to device
-        console.log('Device not paired');
-        // Get paired Device Object
-        //console.log({ pairedDevice });
-      } else {
-        // Get device object of previously paired device
-        console.log('Device previously paired');
-        pairedDevice = pairedDevices.filter(d => d.id === device.id)[0];
-      }*/
-      //console.log('available? ');
-      //let avail = await pairedDevice.available();
-      //console.log('available: ', {avail});
-      // Connect to paired device
-      console.log('Paired Device:');
-      console.log(pairedDevice);
       let text = stringToBytes('r');
       let w = await BleManager.write(
-        device.id,// Need to figure out how to get the below ID's from a device.
+        device.id,
         '0000ffe0-0000-1000-8000-00805f9b34fb',
         '0000ffe1-0000-1000-8000-00805f9b34fb',
         text,
       );
-      console.log({w});
+      console.log({w});*/
     } catch (e) {
       console.log('error');
       console.log({e});
@@ -231,18 +233,14 @@ const Settings = () => {
           onPress={() => startScan()}>
           {scanning && <ActivityIndicator size="large" color="#FF5522" />}
         </Row>
-        {[...scannedDevices, ...pairedDevices].length > 0 && (
-          <SectionList
-            style={styles.list}
-            sections={[
-              {title: 'Paired Devices', data: pairedDevices},
-              {title: 'Scanned Devices', data: scannedDevices},
-            ]}
-            renderItem={renderDevice}
-            renderSectionHeader={renderHeader}
-            keyExtractor={() => Math.random() * 1000}
-          />
-        )}
+
+        <SectionList
+          style={styles.list}
+          sections={[{title: 'Scanned Devices', data: scannedDevices}]}
+          renderItem={renderDevice}
+          renderSectionHeader={renderHeader}
+          keyExtractor={() => Math.random() * 1000}
+        />
       </View>
 
       <View
