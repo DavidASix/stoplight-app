@@ -1,12 +1,13 @@
 import React, {useState, useEffect} from 'react';
 import {
-  Text,
+  ToastAndroid,
   View,
   TouchableOpacity,
   Image,
   NativeModules,
   NativeEventEmitter,
 } from 'react-native';
+import DropDownPicker from 'react-native-dropdown-picker';
 import {stringToBytes} from 'convert-string';
 import BleManager from 'react-native-ble-manager';
 const BleManagerModule = NativeModules.BleManager;
@@ -15,9 +16,12 @@ const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
 import SSIcon from 'react-native-vector-icons/SimpleLineIcons';
 
 const Home = props => {
+  const [ddOpen, setddOpen] = useState(false);
+  /*
   const [r, setRed] = useState(false);
   const [y, setYellow] = useState(false);
-  const [g, setGreen] = useState(false);
+  const [g, setGreen] = useState(false);*/
+  const [{r, y, g}, setColors] = useState({r: false, y: false, g: false});
   const [connectedDevices, setConnectedDevices] = useState([]);
   const [selectedDevice, setSelectedDevice] = useState(false);
 
@@ -28,26 +32,46 @@ const Home = props => {
       setConnectedDevices(connected);
     };
     bleSetup();
+    const connectHandler = bleManagerEmitter.addListener(
+      'BleManagerConnectPeripheral',
+      handleConnect,
+    );
+    const disconnectHandler = bleManagerEmitter.addListener(
+      'BleManagerDisconnectPeripheral',
+      handleDisconnect,
+    );
+    return () => {
+      connectHandler.remove();
+      disconnectHandler.remove();
+    };
   }, []);
+
+  const handleConnect = async device => {
+    let connected = await BleManager.getConnectedPeripherals([]);
+    setConnectedDevices(connected);
+  };
+
+  const handleDisconnect = async device => {
+    let connected = await BleManager.getConnectedPeripherals([]);
+    setConnectedDevices(connected);
+  };
 
   const changeLight = async l => {
     if (!selectedDevice) {
-      return console.log('Select a device');
+      return ToastAndroid.show('Select a device', ToastAndroid.SHORT);
     }
     try {
-      let text = stringToBytes('r');
-      let w = await BleManager.write(
-        selectedDevice.id,
+      let text = stringToBytes(l);
+      await BleManager.write(
+        selectedDevice,
         '0000ffe0-0000-1000-8000-00805f9b34fb',
         '0000ffe1-0000-1000-8000-00805f9b34fb',
         text,
       );
-      console.log({w});
+      setColors(prev => ({...prev, [l]: !prev[l]}));
     } catch (e) {
-      console.log(e);
+      ToastAndroid.show('Error writing to device.', ToastAndroid.SHORT);
     }
-    let funcs = {r: setRed, y: setYellow, g: setGreen};
-    funcs[l](![l]);
   };
   /**
    * would be cool to see the stoplight have a little movement if you drag on the edge of it
@@ -56,10 +80,28 @@ const Home = props => {
     <View style={styles.pageContainer}>
       <View style={styles.headerContainer}>
         <View style={{flex: 1}} />
-        <View style={{flex: 3, justifyContent: 'center', alignItems: 'center'}}>
-          <Text style={styles.title}>
-            {false ? 'Connected' : 'Not Connected'}
-          </Text>
+        <View
+          style={{
+            flex: 3,
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+          <DropDownPicker
+            open={ddOpen}
+            value={selectedDevice}
+            items={connectedDevices.map(d => ({label: d.name, value: d.id}))}
+            setOpen={setddOpen}
+            setValue={setSelectedDevice}
+            style={styles.dropdown}
+            textStyle={{color: '#fff'}}
+            dropDownContainerStyle={styles.dropdown}
+            ArrowUpIconComponent={() => (
+              <SSIcon name="arrow-up" size={15} color="#FFF" />
+            )}
+            ArrowDownIconComponent={() => (
+              <SSIcon name="arrow-down" size={15} color="#FFF" />
+            )}
+          />
         </View>
         <View
           style={{flex: 1, justifyContent: 'center', alignItems: 'flex-end'}}>
@@ -175,8 +217,8 @@ const styles = {
     width: '90%',
     padding: 15,
     flexDirection: 'row',
-    //borderBottomWidth: 1,
     borderColor: '#fff',
+    zIndex: 100,
   },
   title: {
     fontSize: 18,
@@ -247,6 +289,11 @@ const styles = {
     borderLeftWidth: 1,
     borderRightWidth: 1,
     borderColor: '#fff',
+  },
+  dropdown: {
+    backgroundColor: '#e9b20e',
+    borderColor: '#fff',
+    color: '#fff',
   },
 };
 
