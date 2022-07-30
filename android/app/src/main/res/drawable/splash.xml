@@ -4,10 +4,10 @@
         android:drawable="@color/splash"/>
     <item
       android:gravity="center"
-      android:width="200dp"
-      android:height="200dp">
+      android:width="300dp"
+      android:height="300dp">
         <bitmap
           android:gravity="fill_horizontal|fill_vertical"
-            android:src="@mipmap/splash"/>
+            android:src="@mipmap/splash_large"/>
     </item>
 </layer-list>
