@@ -13,6 +13,7 @@ import {
   NativeModules,
   ToastAndroid,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Lottie from 'lottie-react-native';
 import BleManager from 'react-native-ble-manager';
 const BleManagerModule = NativeModules.BleManager;
@@ -38,9 +39,9 @@ const Row = props => {
 };
 
 const Settings = () => {
+  const [lampMode, setLampMode] = useState('ssm');
   const [msm, setMsm] = useState(new Animated.Value(1));
   const [ssm, setSsm] = useState(new Animated.Value(0));
-  const [btc, setBtc] = useState(new Animated.Value(0));
   const [scanning, setScanning] = useState(false);
   const [scannedDevices, setScannedDevice] = useState([]);
   const [connectedDevices, setConnectedDevices] = useState([]);
@@ -68,7 +69,19 @@ const Settings = () => {
       'BleManagerDisconnectPeripheral',
       handleDisconnect,
     );
-
+    const setAsyncStates = async () => {
+      try {
+        let mode = await AsyncStorage.getItem('@lampMode');
+        if (!mode) {
+          mode = 'msm';
+        }
+        setMsm(new Animated.Value((mode === 'msm') * 1));
+        setSsm(new Animated.Value((mode === 'ssm') * 1));
+      } catch (e) {
+        console.log({e});
+      }
+    };
+    setAsyncStates();
     return () => {
       discoveryHandler.remove();
       scanStopHandler.remove();
@@ -110,20 +123,32 @@ const Settings = () => {
     setConnectedDevices(connected);
   };
 
-  const lampMode = slug => {
-    let animconf = {duration: 1100, useNativeDriver: false};
-    console.log(`${slug} : ${![slug]._value}`);
-    switch (slug) {
-      case 'msm':
-        Animated.timing(msm, {...animconf, toValue: 1}).start();
-        Animated.timing(ssm, {...animconf, toValue: 0}).start();
-        break;
-      case 'ssm':
-        Animated.timing(msm, {...animconf, toValue: 0}).start();
-        Animated.timing(ssm, {...animconf, toValue: 1}).start();
-        break;
-      default:
-    }
+  const onPressLampMode = slug => {
+    return new Promise(async (resolve, reject) => {
+      let animconf = {duration: 1100, useNativeDriver: false};
+      try {
+        await AsyncStorage.setItem('@lampMode', slug);
+        console.log(`${slug} : ${![slug]._value}`);
+        switch (slug) {
+          case 'msm':
+            // Multi Select Mode
+            Animated.timing(msm, {...animconf, toValue: 1}).start();
+            Animated.timing(ssm, {...animconf, toValue: 0}).start();
+            break;
+          case 'ssm':
+            // Single Select Mode
+            Animated.timing(msm, {...animconf, toValue: 0}).start();
+            Animated.timing(ssm, {...animconf, toValue: 1}).start();
+            break;
+          default:
+        }
+        setLampMode(slug);
+        resolve('Set');
+      } catch (e) {
+        console.log('Could not store lamp mode');
+        reject('e');
+      }
+    });
   };
 
   const startScan = async () => {
@@ -213,7 +238,7 @@ const Settings = () => {
         <Row
           title="Multi-Select Mode"
           sub="Select lights additively, adding to the selection with each press. Press lights again to turn off."
-          onPress={() => lampMode('msm')}>
+          onPress={() => onPressLampMode('msm')}>
           <Lottie
             progress={msm}
             style={{width: '200%'}}
@@ -223,7 +248,7 @@ const Settings = () => {
         <Row
           title="Single Select Mode"
           sub="Selecting a light will turn it on and turn off all other lights. This is how a StopLight normally acts."
-          onPress={() => lampMode('ssm')}>
+          onPress={() => onPressLampMode('ssm')}>
           <Lottie
             progress={ssm}
             style={{width: '200%'}}
