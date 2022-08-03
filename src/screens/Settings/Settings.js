@@ -39,7 +39,6 @@ const Row = props => {
 };
 
 const Settings = () => {
-  const [lampMode, setLampMode] = useState('ssm');
   const [msm, setMsm] = useState(new Animated.Value(1));
   const [ssm, setSsm] = useState(new Animated.Value(0));
   const [scanning, setScanning] = useState(false);
@@ -71,12 +70,12 @@ const Settings = () => {
     );
     const setAsyncStates = async () => {
       try {
-        let mode = await AsyncStorage.getItem('@lampMode');
-        if (!mode) {
-          mode = 'msm';
+        let lampMode = await AsyncStorage.getItem('@lampMode');
+        if (!lampMode) {
+          lampMode = 'msm';
         }
-        setMsm(new Animated.Value((mode === 'msm') * 1));
-        setSsm(new Animated.Value((mode === 'ssm') * 1));
+        setMsm(new Animated.Value((lampMode === 'msm') * 1));
+        setSsm(new Animated.Value((lampMode === 'ssm') * 1));
       } catch (e) {
         console.log({e});
       }
@@ -142,7 +141,6 @@ const Settings = () => {
             break;
           default:
         }
-        setLampMode(slug);
         resolve('Set');
       } catch (e) {
         console.log('Could not store lamp mode');
