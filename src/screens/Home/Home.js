@@ -4,11 +4,13 @@ import {
   View,
   TouchableOpacity,
   Image,
+  Text,
   NativeModules,
   NativeEventEmitter,
 } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
-import {stringToBytes} from 'convert-string';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {stringToBytes, bytesToString} from 'convert-string';
 import BleManager from 'react-native-ble-manager';
 const BleManagerModule = NativeModules.BleManager;
 const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
@@ -22,6 +24,7 @@ const Home = props => {
   const [y, setYellow] = useState(false);
   const [g, setGreen] = useState(false);*/
   const [{r, y, g}, setColors] = useState({r: false, y: false, g: false});
+  const [lampMode, setLampMode] = useState('msm');
   const [connectedDevices, setConnectedDevices] = useState([]);
   const [selectedDevice, setSelectedDevice] = useState(false);
 
@@ -40,10 +43,22 @@ const Home = props => {
       'BleManagerDisconnectPeripheral',
       handleDisconnect,
     );
+    const screenFocusListener = props.navigation.addListener(
+      'focus',
+      async () => {
+        let storedLampMode = await AsyncStorage.getItem('@lampMode');
+        if (!storedLampMode) {
+          storedLampMode = 'msm';
+        }
+        setLampMode(storedLampMode);
+      },
+    );
     return () => {
       connectHandler.remove();
       disconnectHandler.remove();
+      return screenFocusListener;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleConnect = async device => {
@@ -56,22 +71,73 @@ const Home = props => {
     setConnectedDevices(connected);
   };
 
-  const changeLight = async l => {
+  const onPressLamp = async l => {
     if (!selectedDevice) {
       return ToastAndroid.show('Select a device', ToastAndroid.SHORT);
     }
+    let serviceUUID = '0000ffe0-0000-1000-8000-00805f9b34fb';
+    let characteristicUUID = '0000ffe1-0000-1000-8000-00805f9b34fb';
     try {
-      let text = stringToBytes(l);
-      await BleManager.write(
-        selectedDevice,
-        '0000ffe0-0000-1000-8000-00805f9b34fb',
-        '0000ffe1-0000-1000-8000-00805f9b34fb',
-        text,
-      );
-      setColors(prev => ({...prev, [l]: !prev[l]}));
+      let services = await BleManager.retrieveServices(selectedDevice);
+      //console.log(services.characteristics);
+      if (lampMode === 'msm') {
+        let text = stringToBytes(l);
+        await BleManager.write(
+          selectedDevice,
+          serviceUUID,
+          characteristicUUID,
+          text,
+        );
+        setColors(prev => ({...prev, [l]: !prev[l]}));
+      } else if (lampMode === 'ssm') {
+        await BleManager.write(
+          selectedDevice,
+          serviceUUID,
+          characteristicUUID,
+          stringToBytes('s'),
+        );
+        console.log('wrote something');
+        //console.log(bytesToString(res[0]));
+        /*
+        let lights = ['r', 'y', 'g'];
+        for (const light of lights) {
+          let char = light === l ? l : false;
+          char = char || (eval(light) ? light : 'z');
+          await BleManager.write(
+            selectedDevice,
+            serviceUUID,
+            characteristicUUID,
+            stringToBytes(char),
+          );
+        }*/
+        //console.log({res});
+      } else {
+        throw 'Check selection mode';
+      }
     } catch (e) {
-      ToastAndroid.show('Error writing to device.', ToastAndroid.SHORT);
+      ToastAndroid.show(e, ToastAndroid.SHORT);
     }
+  };
+  const onPressConnectedDevice = async device => {
+    let deviceID = device();
+    let serviceUUID = '0000ffe0-0000-1000-8000-00805f9b34fb';
+    let characteristicUUID = '0000ffe1-0000-1000-8000-00805f9b34fb';
+    setSelectedDevice(deviceID);
+    // To enable BleManagerDidUpdateValueForCharacteristic listener
+    await BleManager.startNotification(
+      deviceID,
+      serviceUUID,
+      characteristicUUID,
+    );
+    // Add event listener
+    bleManagerEmitter.addListener(
+      'BleManagerDidUpdateValueForCharacteristic',
+      ({value, peripheral, characteristic, service}) => {
+        // Convert bytes array to string
+        const data = bytesToString(value);
+        console.log(`Received ${data} for characteristic ${characteristic}`);
+      },
+    );
   };
   /**
    * would be cool to see the stoplight have a little movement if you drag on the edge of it
@@ -86,12 +152,15 @@ const Home = props => {
             justifyContent: 'center',
             alignItems: 'center',
           }}>
+          <Text style={{fontSize: 16, marginBottom: 5}}>
+            {lampMode === 'msm' ? 'Multi-Select Mode' : 'Single Select Mode'}
+          </Text>
           <DropDownPicker
             open={ddOpen}
             value={selectedDevice}
             items={connectedDevices.map(d => ({label: d.name, value: d.id}))}
             setOpen={setddOpen}
-            setValue={setSelectedDevice}
+            setValue={onPressConnectedDevice}
             style={styles.dropdown}
             textStyle={{color: '#fff'}}
             dropDownContainerStyle={styles.dropdown}
@@ -130,7 +199,7 @@ const Home = props => {
         <View style={styles.outline}>
           <View style={styles.lightBox}>
             <TouchableOpacity
-              onPress={() => changeLight('r')}
+              onPress={() => onPressLamp('r')}
               style={[
                 styles.lamp,
                 {backgroundColor: 'hsl(0, 10%, 50%)'},
@@ -154,7 +223,7 @@ const Home = props => {
           <View
             style={[styles.lightBox, {width: `${(2 / 3) * (3 / 4) * 100}%`}]}>
             <TouchableOpacity
-              onPress={() => changeLight('y')}
+              onPress={() => onPressLamp('y')}
               style={[
                 styles.lamp,
                 {backgroundColor: 'hsl(60, 10%, 50%)'},
@@ -178,7 +247,7 @@ const Home = props => {
           <View
             style={[styles.lightBox, {width: `${(2 / 3) * (3 / 4) * 100}%`}]}>
             <TouchableOpacity
-              onPress={() => changeLight('g')}
+              onPress={() => onPressLamp('g')}
               style={[
                 styles.lamp,
                 {backgroundColor: 'hsl(126, 10%, 50%)'},

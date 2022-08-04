@@ -127,7 +127,6 @@ const Settings = () => {
       let animconf = {duration: 1100, useNativeDriver: false};
       try {
         await AsyncStorage.setItem('@lampMode', slug);
-        console.log(`${slug} : ${![slug]._value}`);
         switch (slug) {
           case 'msm':
             // Multi Select Mode
