@@ -19,14 +19,12 @@ import SSIcon from 'react-native-vector-icons/SimpleLineIcons';
 
 const Home = props => {
   const [ddOpen, setddOpen] = useState(false);
-  /*
-  const [r, setRed] = useState(false);
-  const [y, setYellow] = useState(false);
-  const [g, setGreen] = useState(false);*/
   const [{r, y, g}, setColors] = useState({r: false, y: false, g: false});
   const [lampMode, setLampMode] = useState('msm');
+  const [lampState, setLampState] = useState([0, 0, 0]);
   const [connectedDevices, setConnectedDevices] = useState([]);
   const [selectedDevice, setSelectedDevice] = useState(false);
+  var bleReader = null;
 
   useEffect(() => {
     const bleSetup = async () => {
@@ -56,6 +54,9 @@ const Home = props => {
     return () => {
       connectHandler.remove();
       disconnectHandler.remove();
+      if (bleReader !== null) {
+        bleReader.remove();
+      }
       return screenFocusListener;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -78,8 +79,8 @@ const Home = props => {
     let serviceUUID = '0000ffe0-0000-1000-8000-00805f9b34fb';
     let characteristicUUID = '0000ffe1-0000-1000-8000-00805f9b34fb';
     try {
-      let services = await BleManager.retrieveServices(selectedDevice);
-      //console.log(services.characteristics);
+      // Calls to change a lamp return state from the BLE module.
+      // This triggers the listener from onPressConnectedDevice and changes the screen light display
       if (lampMode === 'msm') {
         let text = stringToBytes(l);
         await BleManager.write(
@@ -88,15 +89,15 @@ const Home = props => {
           characteristicUUID,
           text,
         );
-        setColors(prev => ({...prev, [l]: !prev[l]}));
+        //setColors(prev => ({...prev, [l]: !prev[l]}));
       } else if (lampMode === 'ssm') {
+        let text = stringToBytes(l);
         await BleManager.write(
           selectedDevice,
           serviceUUID,
           characteristicUUID,
-          stringToBytes('s'),
+          text,
         );
-        console.log('wrote something');
         //console.log(bytesToString(res[0]));
         /*
         let lights = ['r', 'y', 'g'];
@@ -118,26 +119,48 @@ const Home = props => {
       ToastAndroid.show(e, ToastAndroid.SHORT);
     }
   };
+
   const onPressConnectedDevice = async device => {
-    let deviceID = device();
+    let deviceID = String(device());
+    // Default values for an HM-10 BLE Module
     let serviceUUID = '0000ffe0-0000-1000-8000-00805f9b34fb';
     let characteristicUUID = '0000ffe1-0000-1000-8000-00805f9b34fb';
     setSelectedDevice(deviceID);
-    // To enable BleManagerDidUpdateValueForCharacteristic listener
-    await BleManager.startNotification(
-      deviceID,
-      serviceUUID,
-      characteristicUUID,
-    );
-    // Add event listener
-    bleManagerEmitter.addListener(
-      'BleManagerDidUpdateValueForCharacteristic',
-      ({value, peripheral, characteristic, service}) => {
-        // Convert bytes array to string
-        const data = bytesToString(value);
-        console.log(`Received ${data} for characteristic ${characteristic}`);
-      },
-    );
+    try {
+      // Use services to get serviceUUId and CharUUID if you don't have it
+      //let services = await BleManager.retrieveServices(deviceID);
+      await BleManager.startNotification(
+        deviceID,
+        serviceUUID,
+        characteristicUUID,
+      );
+      // Add event listener
+      if (bleReader !== null) {
+        bleReader.remove();
+      }
+      bleReader = bleManagerEmitter.addListener(
+        'BleManagerDidUpdateValueForCharacteristic',
+        ({value, peripheral, characteristic, service}) => {
+          //This is only set up to receive the response from command s, for State
+          // returns a three character string of 0 and 1, for red, yellow, green
+          // Convert bytes array to string
+          let data = bytesToString(value);
+          data = data.replace(/[\r\n]/gm, '');
+          data = data.split('').map(char => char * 1);
+          setLampState(data);
+          setColors({r: data[0], y: data[1], g: data[2]});
+        },
+      );
+      // Get initial state of lamps
+      await BleManager.write(
+        deviceID,
+        serviceUUID,
+        characteristicUUID,
+        stringToBytes('s'),
+      );
+    } catch (e) {
+      console.log(e);
+    }
   };
   /**
    * would be cool to see the stoplight have a little movement if you drag on the edge of it
