@@ -77,7 +77,7 @@ const Settings = () => {
         setMsm(new Animated.Value((lampMode === 'msm') * 1));
         setSsm(new Animated.Value((lampMode === 'ssm') * 1));
       } catch (e) {
-        console.log({e});
+        ToastAndroid.show(e, ToastAndroid.SHORT);
       }
     };
     setAsyncStates();
@@ -102,7 +102,6 @@ const Settings = () => {
   };
 
   const handleStopScan = () => {
-    console.log('Stopped Scanning');
     setScanning(false);
   };
 
@@ -117,7 +116,6 @@ const Settings = () => {
   };
 
   const handleDisconnect = async device => {
-    console.log('Handle Disconnect for: ', device);
     let connected = await BleManager.getConnectedPeripherals([]);
     setConnectedDevices(connected);
   };
@@ -142,7 +140,6 @@ const Settings = () => {
         }
         resolve('Set');
       } catch (e) {
-        console.log('Could not store lamp mode');
         reject('e');
       }
     });
@@ -150,7 +147,7 @@ const Settings = () => {
 
   const startScan = async () => {
     if (Platform.OS !== 'android' && Platform.Version < 23) {
-      return console.log('Wrong Platform');
+      return ToastAndroid.show('Wrong platform', ToastAndroid.SHORT);
     }
     try {
       let permission = await PermissionsAndroid.check(
@@ -169,22 +166,17 @@ const Settings = () => {
       setConnectedDevices(connected);
       setScannedDevice([]);
       await BleManager.scan([], 5, true);
-      console.log('Scanning Started');
       // Start Discovery
     } catch (e) {
-      console.log(e);
+      ToastAndroid.show(e, ToastAndroid.SHORT);
     }
   };
 
   const onPressDevice = async device => {
-    console.log('----- Attempting to connect to: ', device.name);
     try {
       await BleManager.connect(device.id);
-      console.log('Device Connected');
     } catch (e) {
       ToastAndroid.show('Error connecting to device.', ToastAndroid.SHORT);
-      console.log('error');
-      console.log({e});
     }
   };
 
