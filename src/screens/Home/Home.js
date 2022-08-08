@@ -19,9 +19,8 @@ import SSIcon from 'react-native-vector-icons/SimpleLineIcons';
 
 const Home = props => {
   const [ddOpen, setddOpen] = useState(false);
-  const [{r, y, g}, setColors] = useState({r: false, y: false, g: false});
+  const [lamps, setLamps] = useState({r: 0, y: 0, g: 0});
   const [lampMode, setLampMode] = useState('msm');
-  const [lampState, setLampState] = useState([0, 0, 0]);
   const [connectedDevices, setConnectedDevices] = useState([]);
   const [selectedDevice, setSelectedDevice] = useState(false);
   var bleReader = null;
@@ -81,40 +80,20 @@ const Home = props => {
     try {
       // Calls to change a lamp return state from the BLE module.
       // This triggers the listener from onPressConnectedDevice and changes the screen light display
-      if (lampMode === 'msm') {
-        let text = stringToBytes(l);
-        await BleManager.write(
-          selectedDevice,
-          serviceUUID,
-          characteristicUUID,
-          text,
-        );
-        //setColors(prev => ({...prev, [l]: !prev[l]}));
-      } else if (lampMode === 'ssm') {
-        let text = stringToBytes(l);
-        await BleManager.write(
-          selectedDevice,
-          serviceUUID,
-          characteristicUUID,
-          text,
-        );
-        //console.log(bytesToString(res[0]));
-        /*
-        let lights = ['r', 'y', 'g'];
-        for (const light of lights) {
-          let char = light === l ? l : false;
-          char = char || (eval(light) ? light : 'z');
-          await BleManager.write(
-            selectedDevice,
-            serviceUUID,
-            characteristicUUID,
-            stringToBytes(char),
-          );
-        }*/
-        //console.log({res});
-      } else {
-        throw 'Check selection mode';
+      if (!['ssm', 'msm'].includes(lampMode)) {
+        throw 'Check Lamp Mode';
       }
+      let text = l; // default, for msm
+      if (lampMode === 'ssm') {
+        text = 'm';
+        Object.keys(lamps).forEach(c => (text += l === c ? +!lamps[l] : 0));
+      }
+      await BleManager.write(
+        selectedDevice,
+        serviceUUID,
+        characteristicUUID,
+        stringToBytes(text),
+      );
     } catch (e) {
       ToastAndroid.show(e, ToastAndroid.SHORT);
     }
@@ -147,8 +126,7 @@ const Home = props => {
           let data = bytesToString(value);
           data = data.replace(/[\r\n]/gm, '');
           data = data.split('').map(char => char * 1);
-          setLampState(data);
-          setColors({r: data[0], y: data[1], g: data[2]});
+          setLamps({r: data[0], y: data[1], g: data[2]});
         },
       );
       // Get initial state of lamps
@@ -159,7 +137,7 @@ const Home = props => {
         stringToBytes('s'),
       );
     } catch (e) {
-      console.log(e);
+      ToastAndroid.show(e, ToastAndroid.SHORT);
     }
   };
   /**
@@ -226,7 +204,7 @@ const Home = props => {
               style={[
                 styles.lamp,
                 {backgroundColor: 'hsl(0, 10%, 50%)'},
-                r && [
+                lamps.r && [
                   styles.lampOn,
                   {backgroundColor: '#fc4444', shadowColor: '#FF0000'},
                 ],
@@ -250,7 +228,7 @@ const Home = props => {
               style={[
                 styles.lamp,
                 {backgroundColor: 'hsl(60, 10%, 50%)'},
-                y && [
+                lamps.y && [
                   styles.lampOn,
                   {backgroundColor: '#f9fc44', shadowColor: '#FFFF00'},
                 ],
@@ -274,7 +252,7 @@ const Home = props => {
               style={[
                 styles.lamp,
                 {backgroundColor: 'hsl(126, 10%, 50%)'},
-                g && [
+                lamps.g && [
                   styles.lampOn,
                   {backgroundColor: '#44fc57', shadowColor: '#00FF00'},
                 ],
