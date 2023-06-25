@@ -1,5 +1,7 @@
 import React, {useState, useEffect} from 'react';
 import {
+  Alert,
+  PermissionsAndroid,
   ToastAndroid,
   View,
   TouchableOpacity,
@@ -7,6 +9,7 @@ import {
   Text,
   NativeModules,
   NativeEventEmitter,
+  BackHandler,
 } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -23,41 +26,111 @@ const Home = props => {
   const [lampMode, setLampMode] = useState('msm');
   const [connectedDevices, setConnectedDevices] = useState([]);
   const [selectedDevice, setSelectedDevice] = useState(false);
+  const [btPermission, setBtPermission] = useState(false);
   var bleReader = null;
 
   useEffect(() => {
-    const bleSetup = async () => {
-      await BleManager.start({showAlert: true});
-      let connected = await BleManager.getConnectedPeripherals([]);
-      setConnectedDevices(connected);
-    };
-    bleSetup();
-    const connectHandler = bleManagerEmitter.addListener(
-      'BleManagerConnectPeripheral',
-      handleConnect,
-    );
-    const disconnectHandler = bleManagerEmitter.addListener(
-      'BleManagerDisconnectPeripheral',
-      handleDisconnect,
-    );
-    const screenFocusListener = props.navigation.addListener(
-      'focus',
-      async () => {
-        let storedLampMode = await AsyncStorage.getItem('@lampMode');
-        if (!storedLampMode) {
-          storedLampMode = 'msm';
+    // Moved setup to async function
+    const setupBluetooth = async () => {
+      try {
+        // Check for permission to use bluetooth, required for new version of Android
+        // Only connectPermission opens request alert, but SCAN is explicitly required as well
+        const scanPermission = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
+          {
+            title: 'StopLight Bluetooth Permission',
+            message: 'Bluetooth Low Energy scan permission is required',
+            buttonNegative: 'Cancel',
+            buttonPositive: 'OK',
+          },
+        );
+        const connectPermission = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+          {
+            title: 'StopLight Bluetooth Permission',
+            message: 'Bluetooth Low Energy connect permission is required',
+            buttonNegative: 'Cancel',
+            buttonPositive: 'OK',
+          },
+        );
+        if (
+          connectPermission !== PermissionsAndroid.RESULTS.GRANTED ||
+          scanPermission !== PermissionsAndroid.RESULTS.GRANTED
+        ) {
+          setBtPermission(false);
+          console.log('error');
+          throw new Error('Could not get BT Permission');
         }
-        setLampMode(storedLampMode);
-      },
-    );
-    return () => {
-      connectHandler.remove();
-      disconnectHandler.remove();
-      if (bleReader !== null) {
-        bleReader.remove();
+        setBtPermission(true);
+        // Bluetooth permission is granted, initialize BLE functions
+        initializeBluetooth();
+      } catch (err) {
+        // Error occured due to lack of BT Permissions
+        // console.error(err);
+        Alert.alert(
+          'Bluetooth permissions are required to use this app',
+          'Please accept the permissions',
+          [{text: 'OK', onPress: () => setupBluetooth()}],
+        );
       }
-      return screenFocusListener;
     };
+
+    // Called after Bluetooth permission has been granted
+    // This function initializes the bluetooth connection by getting currently connected peripherals, and setting up ble listeners
+    const initializeBluetooth = async () => {
+      try {
+        await BleManager.start({showAlert: true});
+        let connected = await BleManager.getConnectedPeripherals([]);
+        setConnectedDevices(connected);
+        const connectHandler = bleManagerEmitter.addListener(
+          'BleManagerConnectPeripheral',
+          handleConnect,
+        );
+        const disconnectHandler = bleManagerEmitter.addListener(
+          'BleManagerDisconnectPeripheral',
+          handleDisconnect,
+        );
+        const screenFocusListener = props.navigation.addListener(
+          'focus',
+          async () => {
+            let storedLampMode = await AsyncStorage.getItem('@lampMode');
+            if (!storedLampMode) {
+              storedLampMode = 'msm';
+            }
+            setLampMode(storedLampMode);
+          },
+        );
+        return () => {
+          connectHandler.remove();
+          disconnectHandler.remove();
+          // bleReader is a listener set up after a device has been connected to
+          // The variable reads bits from the ble connection and assigns them to state
+          // At app disconnect the variable could or could not be assigned, depending on if a device was connected to
+          if (bleReader !== null) {
+            bleReader.remove();
+          }
+          return screenFocusListener;
+        };
+      } catch (err) {
+        // Error would be thrown if BLE manager could not run, or could not search for devices
+        // In either case, app should be reloaded
+        console.log(err);
+        Alert.alert(
+          "Couldn't connect to BlueTooth",
+          'An error occurred. Please reload the app.',
+          [
+            {text: 'Ignore', onPress: () => {}},
+            {
+              text: 'Close App',
+              style: 'destructive',
+              onPress: () => BackHandler.exitApp(),
+            },
+          ],
+        );
+      }
+    };
+    // Function is called to ensure BT permissions available before BLE manager setup
+    setupBluetooth();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -120,7 +193,7 @@ const Home = props => {
       bleReader = bleManagerEmitter.addListener(
         'BleManagerDidUpdateValueForCharacteristic',
         ({value, peripheral, characteristic, service}) => {
-          //This is only set up to receive the response from command s, for State
+          // This is only set up to receive the response from command s, for State
           // returns a three character string of 0 and 1, for red, yellow, green
           // Convert bytes array to string
           let data = bytesToString(value);
