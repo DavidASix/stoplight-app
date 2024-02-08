@@ -1,0 +1,8 @@
+{
+  "execPath": "C:/Users/David6/.platformio/packages/toolchain-atmelavr/bin/avr-g++.exe",
+  "gccDefaultCFlags": "-fsyntax-only -std=gnu11 -fno-fat-lto-objects -Os -Wall -ffunction-sections -fdata-sections -flto -mmcu=atmega328p -DPLATFORMIO=60105 -DARDUINO_AVR_UNO -DF_CPU=16000000L -DARDUINO_ARCH_AVR -DARDUINO=10808 -D__AVR_ATmega328P__",
+  "gccDefaultCppFlags": "-fsyntax-only -fno-exceptions -fno-threadsafe-statics -fpermissive -std=gnu++11 -Os -Wall -ffunction-sections -fdata-sections -flto -mmcu=atmega328p -DPLATFORMIO=60105 -DARDUINO_AVR_UNO -DF_CPU=16000000L -DARDUINO_ARCH_AVR -DARDUINO=10808 -D__AVR_ATmega328P__",
+  "gccErrorLimit": 15,
+  "gccIncludePaths": "D:/Programming/platformio/StopLight/include,D:/Programming/platformio/StopLight/src,D:/Programming/platformio/StopLight/lib/DallasTemperature,D:/Programming/platformio/StopLight/lib/OneWire,C:/Users/David6/.platformio/packages/framework-arduino-avr/libraries/SoftwareSerial/src,C:/Users/David6/.platformio/packages/framework-arduino-avr/cores/arduino,C:/Users/David6/.platformio/packages/framework-arduino-avr/variants/standard,C:/Users/David6/.platformio/packages/framework-arduino-avr/libraries/EEPROM/src,C:/Users/David6/.platformio/packages/framework-arduino-avr/libraries/HID/src,C:/Users/David6/.platformio/packages/framework-arduino-avr/libraries/SPI/src,C:/Users/David6/.platformio/packages/framework-arduino-avr/libraries/Wire/src,C:/Users/David6/.platformio/packages/toolchain-atmelavr/lib/gcc/avr/7.3.0/include,C:/Users/David6/.platformio/packages/toolchain-atmelavr/lib/gcc/avr/7.3.0/include-fixed,C:/Users/David6/.platformio/packages/toolchain-atmelavr/avr/include",
+  "gccSuppressWarnings": false
+}
