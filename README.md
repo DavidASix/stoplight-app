@@ -1,3 +1,5 @@
+![graphic](./docs/repo-graphic.png)
+
 # Arduino StopLight Project
 A React Native app to control my real life stoplight, and the accompanying Arduino circuit and code.
 
